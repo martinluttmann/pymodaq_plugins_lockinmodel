@@ -1,3 +1,4 @@
+import numpy as np
 from pymodaq.extensions.data_mixer.model import DataMixerModel
 
 from pymodaq_data.data import DataToExport, DataWithAxes, DataCalculated, DataDim
@@ -25,13 +26,22 @@ class DataMixerTraining(DataMixerModel):
     def process_dte(self, dte: DataToExport):
         trace = dte.get_data_from_name('MockSignalForLockin')[0]
 
+        trace_multiplied = self.multiply_with_sine_wave(self, trace, trace.axes(), 1, 0)
+
 
         new_data = DataToExport('Lockin',
                            data=[
-                               DataCalculated('divided by 2', data=[trace/2], labels=['Raw beam'])
+                               DataCalculated('multiplied', data=[trace_multiplied], labels=['Multiplied trace'])
 
                            ]
 
                            )
 
         return new_data
+
+
+    def multiply_with_sine_wave(self, data, axis, freq, phase):
+
+        sine_wave = np.sin(axis*freq + phase)
+
+        return np.multiply(data, sine_wave)
