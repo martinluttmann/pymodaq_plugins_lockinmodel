@@ -15,6 +15,8 @@ class DataMixerTraining(DataMixerModel):
     params = [ {'title': 'Frequency', 'name':'liFreq', 'type':'float', 'value':500, 'suffix':'Hz', 'visible':True},
               {'title': 'Phase', 'name': 'liPhase', 'type': 'float', 'value': 0, 'suffix': r'pi rad', 'visible': True},
               {'title': 'Integration range', 'name': 'liTime', 'type': 'slide', 'value': 100, 'suffix': '%', 'visible': True, 'min':1, 'max':100},
+               {'title': 'Reference wave', 'name': 'refWave', 'type': 'list', 'limits': ['Sine', 'Square'],
+                'value': 'Sine'},
             {'title': 'Sampling rate', 'name': 'SamplingRate', 'type': 'float', 'value': 0.1, 'suffix': 'MHz',
                          'visible': True},
                {'title': 'Show traces', 'name': 'ShowTraces', 'type': 'bool', 'value': False,
@@ -32,9 +34,6 @@ class DataMixerTraining(DataMixerModel):
         trace = dte.get_data_from_name('MockSignalForLockin')[0]
 
 
-
-
-
         Npts = np.shape(trace)[0]
         #print(Npts)
         #time_step = 1/(self.settings.child('SamplingRate').value()*1e6)
@@ -43,9 +42,12 @@ class DataMixerTraining(DataMixerModel):
 
         self.index_max = int(self.settings.child('liTime').value() * 0.01* Npts )
 
-        reference_wave = self.sine_wave(trace, self.settings.child('liFreq').value(),
-                                          self.settings.child('liPhase').value() * np.pi)
-        print(self.index_max)
+        if self.settings.child('refWave').value() == 'Sine':
+            reference_wave = self.sine_wave(trace, self.settings.child('liFreq').value(),
+                                              self.settings.child('liPhase').value() * np.pi)
+        if self.settings.child('refWave').value() == 'Square':
+            reference_wave = self.square_wave(trace, self.settings.child('liFreq').value(),
+                                              self.settings.child('liPhase').value() * np.pi)
 
         trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
 
@@ -65,10 +67,12 @@ class DataMixerTraining(DataMixerModel):
 
     def multiply_with_ref_wave_and_integrate(self, data, freq, phase, index_max):  #freq in acuqisition units, defined by user's sample rate
 
+        if self.settings.child('refWave').value() == 'Sine':
+            ref_wave = self.sine_wave(data, freq, phase)
+        if self.settings.child('refWave').value() == 'Square':
+            ref_wave = self.square_wave(data, freq, phase)
 
-        sine_wave = self.sine_wave(data, freq, phase)
-
-        return np.sum(np.multiply(data[:index_max], sine_wave[:index_max])) / index_max
+        return np.sum(np.multiply(data[:index_max], ref_wave[:index_max])) / index_max
 
     def sine_wave(self, data, freq, phase):
         axis = np.linspace(0, np.shape(data)[0] * 1 / (self.settings.child('SamplingRate').value()*1e6), np.shape(data)[0])
