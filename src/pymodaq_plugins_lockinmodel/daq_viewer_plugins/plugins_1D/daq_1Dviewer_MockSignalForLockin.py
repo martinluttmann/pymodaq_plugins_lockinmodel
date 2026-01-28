@@ -127,7 +127,7 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
 
         if self.is_master:
 
-            self.settings.child('x_axis', 'Npts').setValue(100000)
+            self.settings.child('x_axis', 'Npts').setValue(10000)
             self.settings.child('x_axis', 'x0').setValue(0)
             self.settings.child('x_axis', 'dx').setValue(1)
 
@@ -205,7 +205,8 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
         frequency = 500 #Hz
         phase_noise = np.pi/8
         amp_noise = 10
-        data_tot = np.sin(2*np.pi* self.x_axis.get_data()/1e6 * frequency + phase_noise* np.random.rand()) + amp_noise * np.random.rand((self.x_axis.size))
+        amp_signal = 0.1
+        data_tot = amp_signal*np.sin(2*np.pi* self.x_axis.get_data()/0.1e6 * frequency + phase_noise* np.random.rand()) + amp_noise * (np.random.rand((self.x_axis.size)) - 0.5 )
 
 
 
