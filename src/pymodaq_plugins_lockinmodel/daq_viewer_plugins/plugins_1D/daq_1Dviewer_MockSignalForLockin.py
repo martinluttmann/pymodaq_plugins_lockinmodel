@@ -20,7 +20,7 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
          'tip': 'if true, plugin produces multiple curves (2) otherwise produces one curve with 2 peaks'},
         {'title': 'Mock1:', 'name': 'Mock1', 'type': 'group', 'children': [
             {'title': 'Amp:', 'name': 'Amp', 'type': 'int', 'value': 20, 'default': 20},
-            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 500, 'default': 500},
+            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 0, 'default': 0},
             {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 0.3, 'default': 20},
             {'title': 'n:', 'name': 'n', 'type': 'int', 'value': 1, 'default': 1, 'min': 1},
             {'title': 'noise:', 'name': 'amp_noise', 'type': 'float', 'value': 0.1, 'default': 0.1, 'min': 0}
@@ -33,8 +33,8 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
             {'title': 'noise:', 'name': 'amp_noise', 'type': 'float', 'value': 0.1, 'default': 0.1, 'min': 0}, ]},
 
         {'title': 'xaxis:', 'name': 'x_axis', 'type': 'group', 'children': [
-            {'title': 'Npts:', 'name': 'Npts', 'type': 'int', 'value': 513, },
-            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 515, },
+            {'title': 'Npts:', 'name': 'Npts', 'type': 'int', 'value': 200000, },
+            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 200000, },
             {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 0.1, },
         ]},
     ]
@@ -110,7 +110,7 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
         Npts = self.settings['x_axis', 'Npts']
         x0 = self.settings['x_axis', 'x0']
         dx = self.settings['x_axis', 'dx']
-        self.x_axis = Axis(label='photon wavelength', units='nm',
+        self.x_axis = Axis(label='Samples', units='samples',
                            data=linspace_step(x0 - (Npts - 1) * dx / 2, x0 + (Npts - 1) * dx / 2, dx),
                            index=0)
         self._update_x_axis = True
@@ -127,8 +127,8 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
 
         if self.is_master:
 
-            self.settings.child('x_axis', 'Npts').setValue(512)
-            self.settings.child('x_axis', 'x0').setValue(256)
+            self.settings.child('x_axis', 'Npts').setValue(100000)
+            self.settings.child('x_axis', 'x0').setValue(0)
             self.settings.child('x_axis', 'dx').setValue(1)
 
             self.settings.child('Mock1', 'x0').setValue(125)
@@ -202,10 +202,10 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
                                                                     axes=[self.x_axis])]))
             self._update_x_axis = False
         """
-        omega  = 0.1
+        frequency = 500 #Hz
         phase_noise = np.pi/8
         amp_noise = 10
-        data_tot = np.sin(self.x_axis.get_data() * omega + phase_noise* np.random.rand()) + amp_noise * np.random.rand((self.x_axis.size))
+        data_tot = np.sin(2*np.pi* self.x_axis.get_data()/1e6 * frequency + phase_noise* np.random.rand()) + amp_noise * np.random.rand((self.x_axis.size))
 
 
 
