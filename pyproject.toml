@@ -22,7 +22,7 @@ authors = [
 ]
 maintainers = [
     {name = "Martin Luttmann", email = "myname@test.fr"},
-    
+
 ]
 
 # nottodo: leave everything below as is!
