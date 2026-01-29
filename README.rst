@@ -1,4 +1,4 @@
-pymodaq_plugins_template
+pymodaq_plugins_lockinmodel
 ########################
 
 .. the following must be adapted to your developed package, links to pypi, github  description...
@@ -19,14 +19,14 @@ pymodaq_plugins_template
     :target: https://github.com/PyMoDAQ/pymodaq_plugins_template/actions/workflows/Test.yml
 
 
-Use this template to create a repository on your account and start the development of your own PyMoDAQ plugin!
+Plugin containing a DataMixer model performing lockin amplification of 1D signals, as well as a 1D mock DAQ_viewer to test it !
 
 
 Authors
 =======
 
-* First Author  (myemail@xxx.org)
-* Other author (myotheremail@xxx.org)
+* Martin Luttmann  (martin.luttmann@epfl.ch)
+
 
 .. if needed use this field
 
@@ -46,43 +46,26 @@ Instruments
 
 Below is the list of instruments included in this plugin
 
-Actuators
-+++++++++
 
-* **yyy**: control of yyy actuators
-* **xxx**: control of xxx actuators
-
-Viewer0D
-++++++++
-
-* **yyy**: control of yyy 0D detector
-* **xxx**: control of xxx 0D detector
 
 Viewer1D
 ++++++++
 
-* **yyy**: control of yyy 1D detector
-* **xxx**: control of xxx 1D detector
+* **MockSignalForLockin**: spits out 2 noisy signals with adjustable frequency, amplitude, phase and noise level. The first signal is a sine wave, the 2nd one is a pulse train.
 
 
-Viewer2D
-++++++++
-
-* **yyy**: control of yyy 2D detector
-* **xxx**: control of xxx 2D detector
 
 
-PID Models
+
+Models
 ==========
+* **Lockin**: a DataMixer model performing lockin amplification.
 
-
-Extensions
-==========
 
 
 Installation instructions
 =========================
 
-* PyMoDAQ’s version.
-* Operating system’s version.
-* What manufacturer’s drivers should be installed to make this plugin run?
+* Tested on PyMoDAQ version 5.1.7
+* Tested Windows 11.
+* Uses scipy.signal
