@@ -8,34 +8,35 @@ from pymodaq.utils.data import DataFromPlugins, Axis, DataToExport
 from pymodaq.utils.math_utils import gauss1D, linspace_step
 from pymodaq.control_modules.viewer_utility_classes import comon_parameters
 from pymodaq.utils.parameter.utils import iter_children
-
+from scipy import signal
 
 class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
     """
 
     """
     params = comon_parameters + [
-        {'title': 'Rolling?:', 'name': 'rolling', 'type': 'int', 'value': 0, 'min': 0},
-        {'title': 'Multi Channels?:', 'name': 'multi', 'type': 'bool', 'value': False,
-         'tip': 'if true, plugin produces multiple curves (2) otherwise produces one curve with 2 peaks'},
-        {'title': 'Mock1:', 'name': 'Mock1', 'type': 'group', 'children': [
-            {'title': 'Amp:', 'name': 'Amp', 'type': 'int', 'value': 20, 'default': 20},
-            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 0, 'default': 0},
-            {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 0.3, 'default': 20},
-            {'title': 'n:', 'name': 'n', 'type': 'int', 'value': 1, 'default': 1, 'min': 1},
-            {'title': 'noise:', 'name': 'amp_noise', 'type': 'float', 'value': 0.1, 'default': 0.1, 'min': 0}
+        {'title': 'Sampling rate', 'name': 'SamplingRate', 'type': 'float', 'value': 0.1, 'default': 0.1, 'suffix': 'MHz'},
+        {'title': 'Signal 1 (sine wave)', 'name': 'Mock1', 'type': 'group', 'children': [
+            {'title': 'Freq', 'name': 'Freq', 'type': 'float', 'value': 600, 'default': 600, 'suffix':'Hz'},
+            {'title': 'Amp', 'name': 'Amp', 'type': 'float', 'value': 1, 'default': 1},
+            {'title': 'Phase', 'name': 'Phase', 'type': 'slide', 'value': 0, 'default': 0, 'suffix': 'pi rad', 'min':0, 'max':2},
+            {'title': 'Amp noise:', 'name': 'AmpNoise', 'type': 'float', 'value': 1, 'default': 1},
+            {'title': 'Phase noise', 'name': 'PhaseNoise', 'type': 'float', 'value': 0.12, 'default': 0.12},
         ]},
-        {'title': 'Mock2:', 'name': 'Mock2', 'type': 'group', 'children': [
-            {'title': 'Amp?:', 'name': 'Amp', 'type': 'int', 'value': 10},
-            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 520},
-            {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 0.7},
-            {'title': 'n:', 'name': 'n', 'type': 'int', 'value': 2, 'default': 2, 'min': 1},
-            {'title': 'noise:', 'name': 'amp_noise', 'type': 'float', 'value': 0.1, 'default': 0.1, 'min': 0}, ]},
+
+        {'title': 'Signal 2 (pulses)', 'name': 'Mock2', 'type': 'group', 'children': [
+            {'title': 'Freq', 'name': 'Freq', 'type': 'float', 'value': 500, 'default': 500, 'suffix':'Hz'},
+            {'title': 'Amp', 'name': 'Amp', 'type': 'float', 'value': 1, 'default': 1},
+            {'title': 'Phase', 'name': 'Phase', 'type': 'slide', 'value': 0, 'default': 0, 'suffix': 'pi rad', 'min':0, 'max':2},
+            {'title': 'Amp noise:', 'name': 'AmpNoise', 'type': 'float', 'value': 5, 'default': 5},
+            {'title': 'Phase noise', 'name': 'PhaseNoise', 'type': 'float', 'value': 0.12, 'default': 0.12},
+        ]},
+
 
         {'title': 'xaxis:', 'name': 'x_axis', 'type': 'group', 'children': [
-            {'title': 'Npts:', 'name': 'Npts', 'type': 'int', 'value': 200000, },
-            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 200000, },
-            {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 0.1, },
+            {'title': 'Npts:', 'name': 'Npts', 'type': 'int', 'value': 100000, },
+            {'title': 'x0:', 'name': 'x0', 'type': 'float', 'value': 0, },
+            {'title': 'dx:', 'name': 'dx', 'type': 'float', 'value': 1, },
         ]},
     ]
     hardware_averaging = False
@@ -80,31 +81,23 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
             list
                 The computed data_mock list.
         """
-        ind = -1
-        self.data_mock = []
-        data = np.zeros((self.x_axis.size, ))
 
-        for param in self.settings.children():  #
-            if 'Mock' in param.name():
-                ind += 1
 
-                data_tmp =  \
-                    param['Amp'] * gauss1D(self.x_axis.get_data(), param.child('x0').value(),
-                                           param.child('dx').value(),
-                                           param.child('n').value())
-                if ind == 0:
-                    data_tmp = data_tmp * np.sin(self.x_axis.get_data() / 4) ** 2
-                data_tmp += param['amp_noise'] * np.random.rand((self.x_axis.size))
-                data_tmp = \
-                    1000 * np.roll(data_tmp, self.ind_data * self.settings['rolling'])
-                if self.settings['multi']:
-                    self.data_mock.append(data_tmp)
-                else:
-                    data += data_tmp
-        if not self.settings['multi']:
-            self.data_mock.append(data)
-        self.ind_data += 1
-        return self.data_mock
+        sampling_rate = self.settings.child('SamplingRate').value() * 1e6
+        amp_signal1 = self.settings.child('Mock1', 'Amp').value()
+        amp_signal2 = self.settings.child('Mock2', 'Amp').value()
+        amp_noise1 = self.settings.child('Mock1', 'AmpNoise').value()
+        amp_noise2 = self.settings.child('Mock2', 'AmpNoise').value()
+        phase_noise1 = self.settings.child('Mock1', 'PhaseNoise').value()
+        phase_noise2 = self.settings.child('Mock2', 'PhaseNoise').value()
+        frequency1 = self.settings.child('Mock1', 'Freq').value()
+        frequency2 = self.settings.child('Mock2', 'Freq').value()
+
+        data_tot1 = amp_signal1 * np.sin(2*np.pi* self.x_axis.get_data()/sampling_rate * frequency1 + phase_noise1 * np.random.rand()) + amp_noise1 * (np.random.rand((self.x_axis.size)) - 0.5 )
+
+        data_tot2 = amp_signal2 * signal.square(t=2*np.pi*self.x_axis.get_data()/sampling_rate*frequency2 + phase_noise2* np.random.rand(), duty=0.05) + amp_noise2 * (np.random.rand((self.x_axis.size)) - 0.5 )
+
+        return [data_tot1, data_tot2]
 
     def set_x_axis(self):
         Npts = self.settings['x_axis', 'Npts']
@@ -127,27 +120,20 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
 
         if self.is_master:
 
-            self.settings.child('x_axis', 'Npts').setValue(10000)
+            self.settings.child('x_axis', 'Npts').setValue(100000)
             self.settings.child('x_axis', 'x0').setValue(0)
             self.settings.child('x_axis', 'dx').setValue(1)
 
-            self.settings.child('Mock1', 'x0').setValue(125)
-            self.settings.child('Mock1', 'dx').setValue(20)
 
-            self.settings.child('Mock2', 'x0').setValue(325)
-            self.settings.child('Mock2', 'dx').setValue(20)
-
-            self.settings.child('multi').setValue(True)
-            self.settings.child('rolling').setValue(1)
 
             self.set_x_axis()
-            self.set_Mock_data()
+
             # initialize viewers with the future type of data
             self.dte_signal_temp.emit(DataToExport('Mock1D',
-                                                   data=[DataFromPlugins(name='Mock1', data=self.data_mock,
+                                                   data=[DataFromPlugins(name='Mock1', data=self.set_Mock_data(),
                                                                          dim='Data1D',
                                                                          axes=[self.x_axis],
-                                                                         labels=['Mock1', 'Mock2']),]))
+                                                                         labels=['Signal 1', 'Signal 2']),]))
 
             initialized = True
             info = ''
@@ -182,41 +168,18 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
         """
 
 
-        """
-        Naverage = 1
-        data_tot = self.set_Mock_data()
-        for ind in range(Naverage - 1):
-            data_tmp = self.set_Mock_data()
 
-            for ind, data in enumerate(data_tmp):
-                data_tot[ind] += data
 
-        data_tot = [data / Naverage for data in data_tot]
-
-        if not self._update_x_axis:
-            self.dte_signal.emit(DataToExport('Mock1D',
-                                              data=[DataFromPlugins(name='MockSignalForLockin', data=data_tot, dim='Data1D',)]))
-        else:
-            self.dte_signal.emit(DataToExport('Mock1D',
-                                              data=[DataFromPlugins(name='MockSignalForLockin', data=data_tot, dim='Data1D',
-                                                                    axes=[self.x_axis])]))
-            self._update_x_axis = False
-        """
-        frequency = 500 #Hz
-        phase_noise = np.pi/8
-        amp_noise = 10
-        amp_signal = 0.1
-        data_tot = amp_signal*np.sin(2*np.pi* self.x_axis.get_data()/0.1e6 * frequency + phase_noise* np.random.rand()) + amp_noise * (np.random.rand((self.x_axis.size)) - 0.5 )
 
 
 
         if not self._update_x_axis:
             self.dte_signal.emit(DataToExport('Mock1D',
-                                              data=[DataFromPlugins(name='MockSignalForLockin', data=data_tot, dim='Data1D',)]))
+                                              data=[DataFromPlugins(name='MockSignalForLockin', data=self.set_Mock_data())]))
         else:
             self.dte_signal.emit(DataToExport('Mock1D',
-                                              data=[DataFromPlugins(name='MockSignalForLockin', data=data_tot, dim='Data1D',
-                                                                    axes=[self.x_axis])]))
+                                              data=[DataFromPlugins(name='MockSignalForLockin', data=self.set_Mock_data(),
+                                                                    axes=[self.x_axis, self.x_axis], labels=['Signal 1', 'Signal 2'])]))
 
     def stop(self):
         """

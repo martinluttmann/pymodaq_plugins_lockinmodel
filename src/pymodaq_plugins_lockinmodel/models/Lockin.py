@@ -8,12 +8,12 @@ from pymodaq_gui.parameter import Parameter
 
 
 
-class DataMixerTraining(DataMixerModel):
+class DataMixerLockin(DataMixerModel):
 
 
 
     params = [ {'title': 'Frequency', 'name':'liFreq', 'type':'float', 'value':500, 'suffix':'Hz', 'visible':True},
-              {'title': 'Phase', 'name': 'liPhase', 'type': 'float', 'value': 0, 'suffix': r'pi rad', 'visible': True},
+              {'title': 'Phase', 'name': 'liPhase', 'type': 'slide', 'value': 0, 'suffix': r'pi rad', 'visible': True, 'min':0, 'max':2},
               {'title': 'Integration range', 'name': 'liTime', 'type': 'slide', 'value': 100, 'suffix': '%', 'visible': True, 'min':1, 'max':100},
                {'title': 'Reference wave', 'name': 'refWave', 'type': 'list', 'limits': ['Sine', 'Square'],
                 'value': 'Sine'},
@@ -31,32 +31,48 @@ class DataMixerTraining(DataMixerModel):
         if param.name() == 'get_data':
             pass
     def process_dte(self, dte: DataToExport):
-        trace = dte.get_data_from_name('MockSignalForLockin')[0]
 
+        #trace = dte.get_data_from_name('MockSignalForLockin')[0]
+        #print(dte.data[0].data)
+        data1D = []
+        data0D = []
 
-        Npts = np.shape(trace)[0]
-        #print(Npts)
-        #time_step = 1/(self.settings.child('SamplingRate').value()*1e6)
-
-        #time_window = self.settings.child('liTime').value()/(Npts*time_step)
-
-        self.index_max = int(self.settings.child('liTime').value() * 0.01* Npts )
+        labels1D = []
 
         if self.settings.child('refWave').value() == 'Sine':
-            reference_wave = self.sine_wave(trace, self.settings.child('liFreq').value(),
-                                              self.settings.child('liPhase').value() * np.pi)
+            reference_wave = self.sine_wave(dte.data[0].data[0], self.settings.child('liFreq').value(),
+                                            self.settings.child('liPhase').value() * np.pi)
         if self.settings.child('refWave').value() == 'Square':
-            reference_wave = self.square_wave(trace, self.settings.child('liFreq').value(),
+            reference_wave = self.square_wave(dte.data[0].data[0], self.settings.child('liFreq').value(),
                                               self.settings.child('liPhase').value() * np.pi)
 
-        trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
+        for trace in dte.data[0].data :
+
+            Npts = np.shape(trace)[0]
+            #print(Npts)
 
 
+            #print(Npts)
+            #time_step = 1/(self.settings.child('SamplingRate').value()*1e6)
+
+            #time_window = self.settings.child('liTime').value()/(Npts*time_step)
+
+            self.index_max = int(self.settings.child('liTime').value() * 0.01* Npts )
+
+
+
+            trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
+
+            data0D.append(np.atleast_1d(trace_multiplied_integrated))
+
+            data1D.append(np.atleast_1d(trace))
+
+        data1D.append(np.atleast_1d(reference_wave))
         new_data = DataToExport('Lockin',
                            data=[
-                               DataCalculated('Traces', data=[np.atleast_1d(trace), np.atleast_1d(reference_wave)],
-                                              labels=['raw signal', 'reference wave'], do_plot=self.settings.child('ShowTraces').value()),
-                               DataCalculated('multiplied', data=[np.atleast_1d(trace_multiplied_integrated)], labels=['Lockin signal'])
+                               DataCalculated('Traces', data=data1D,
+                                              do_plot=self.settings.child('ShowTraces').value()),
+                               DataCalculated('Demodulated', data=data0D)
 
                            ]
 
