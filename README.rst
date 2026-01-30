@@ -20,6 +20,8 @@ pymodaq_plugins_lockinmodel
 
 
 Plugin containing a DataMixer model performing lockin amplification (https://en.wikipedia.org/wiki/Lock-in_amplifier) of 1D signals, as well as a 1D mock DAQ_viewer to test it !
+Tutorial : https://youtu.be/8UwQzjvH1BQ
+
 
 
 Authors
