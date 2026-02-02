@@ -24,7 +24,7 @@ class DataMixerLockin(DataMixerModel):
 
                {'title': 'Outputs', 'name': 'Outputs', 'type': 'group', 'expanded': False, 'children': [
                    {'title': 'X', 'name': 'X', 'type': 'bool', 'value': False,
-                    'visible': False},
+                    'visible': True},
                    {'title': 'Y', 'name': 'Y', 'type': 'bool', 'value': False,
                     'visible': True},
                    {'title': 'R', 'name': 'R', 'type': 'bool', 'value': True,
@@ -71,6 +71,7 @@ class DataMixerLockin(DataMixerModel):
         data0D = []
 
         labels1D = []
+        labels0D = []
 
         if self.settings.child('refWave').value() == 'Sine':
             reference_wave = self.sine_wave(dte.data[0].data[0], self.settings.child('liFreq').value(),
@@ -78,12 +79,12 @@ class DataMixerLockin(DataMixerModel):
         if self.settings.child('refWave').value() == 'Square':
             reference_wave = self.square_wave(dte.data[0].data[0], self.settings.child('liFreq').value(),
                                               self.settings.child('liPhase').value() * np.pi)
-
+        i=0
         for trace in dte.data[0].data :
-
+            i += 1
             Npts = np.shape(trace)[0]
             #print(Npts)
-
+            labels1D.append('Signal '+str(i))
 
             #print(Npts)
             #time_step = 1/(self.settings.child('SamplingRate').value()*1e6)
@@ -94,29 +95,34 @@ class DataMixerLockin(DataMixerModel):
 
             if self.settings.child('Outputs', 'X').value() == True:
                 trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
+                labels0D.append('X'+str(i))
             if self.settings.child('Outputs', 'Y').value() == True:
                 trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi + np.pi/2, self.index_max)
-
+                labels0D.append('Y'+str(i))
             if self.settings.child('Outputs', 'R').value() == True:
                 trace_multiplied_integrated = np.sqrt(
                     self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi + np.pi/2, self.index_max)**2
                     + self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)**2 )
+                labels0D.append('R'+str(i))
             if self.settings.child('Outputs', 'Theta').value() == True:
                 trace_multiplied_integrated = np.arctan2(
                     self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max),
                     self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(),self.settings.child('liPhase').value() * np.pi + np.pi / 2, self.index_max)
                 )
+                labels0D.append('Theta'+str(i))
 
             data0D.append(np.atleast_1d(trace_multiplied_integrated))
 
             data1D.append(np.atleast_1d(trace))
 
         data1D.append(np.atleast_1d(reference_wave))
+
+        labels1D.append('Ref')
         new_data = DataToExport('Lockin',
                            data=[
                                DataCalculated('Traces', data=data1D,
-                                              do_plot=self.settings.child('ShowTraces').value()),
-                               DataCalculated('Demodulated', data=data0D)
+                                              do_plot=self.settings.child('ShowTraces').value(), labels=labels1D),
+                               DataCalculated('Demodulated', data=data0D, labels=labels0D)
 
                            ]
 
