@@ -21,6 +21,20 @@ class DataMixerLockin(DataMixerModel):
                          'visible': True},
                {'title': 'Show traces', 'name': 'ShowTraces', 'type': 'bool', 'value': False,
                 'visible': True},
+
+               {'title': 'Outputs', 'name': 'Outputs', 'type': 'group', 'expanded': False, 'children': [
+                   {'title': 'X', 'name': 'X', 'type': 'bool', 'value': False,
+                    'visible': False},
+                   {'title': 'Y', 'name': 'Y', 'type': 'bool', 'value': False,
+                    'visible': True},
+                   {'title': 'R', 'name': 'R', 'type': 'bool', 'value': True,
+                    'visible': True},
+                   {'title': 'Theta', 'name': 'Theta', 'type': 'bool', 'value': False,
+                    'visible': True},
+               ]}
+
+
+
                ]
 
     index_max = 100000
@@ -28,8 +42,27 @@ class DataMixerLockin(DataMixerModel):
         pass
 
     def update_settings(self, param: Parameter):
-        if param.name() == 'get_data':
-            pass
+        if param.name() == 'X':
+            if param.value()==True:
+                self.settings.child('Outputs', 'Y').setValue(False)
+                self.settings.child('Outputs', 'R').setValue(False)
+                self.settings.child('Outputs', 'Theta').setValue(False)
+        if param.name() == 'Y':
+            if param.value()==True:
+                self.settings.child('Outputs', 'X').setValue(False)
+                self.settings.child('Outputs', 'R').setValue(False)
+                self.settings.child('Outputs', 'Theta').setValue(False)
+        if param.name() == 'R':
+            if param.value()==True:
+                self.settings.child('Outputs', 'X').setValue(False)
+                self.settings.child('Outputs', 'Y').setValue(False)
+                self.settings.child('Outputs', 'Theta').setValue(False)
+        if param.name() == 'Theta':
+            if param.value()==True:
+                self.settings.child('Outputs', 'X').setValue(False)
+                self.settings.child('Outputs', 'Y').setValue(False)
+                self.settings.child('Outputs', 'R').setValue(False)
+
     def process_dte(self, dte: DataToExport):
 
         #trace = dte.get_data_from_name('MockSignalForLockin')[0]
@@ -59,9 +92,20 @@ class DataMixerLockin(DataMixerModel):
 
             self.index_max = int(self.settings.child('liTime').value() * 0.01* Npts )
 
+            if self.settings.child('Outputs', 'X').value() == True:
+                trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
+            if self.settings.child('Outputs', 'Y').value() == True:
+                trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi + np.pi/2, self.index_max)
 
-
-            trace_multiplied_integrated = self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)
+            if self.settings.child('Outputs', 'R').value() == True:
+                trace_multiplied_integrated = np.sqrt(
+                    self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi + np.pi/2, self.index_max)**2
+                    + self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max)**2 )
+            if self.settings.child('Outputs', 'Theta').value() == True:
+                trace_multiplied_integrated = np.arctan2(
+                    self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(), self.settings.child('liPhase').value()*np.pi, self.index_max),
+                    self.multiply_with_ref_wave_and_integrate(trace, self.settings.child('liFreq').value(),self.settings.child('liPhase').value() * np.pi + np.pi / 2, self.index_max)
+                )
 
             data0D.append(np.atleast_1d(trace_multiplied_integrated))
 
