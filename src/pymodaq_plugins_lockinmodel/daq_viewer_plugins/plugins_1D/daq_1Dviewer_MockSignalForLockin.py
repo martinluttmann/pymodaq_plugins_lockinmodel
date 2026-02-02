@@ -18,9 +18,9 @@ class DAQ_1DViewer_MockSignalForLockin(DAQ_Viewer_base):
         {'title': 'Sampling rate', 'name': 'SamplingRate', 'type': 'float', 'value': 0.1, 'default': 0.1, 'suffix': 'MHz'},
         {'title': 'Signal 1 (sine wave)', 'name': 'Mock1', 'type': 'group', 'children': [
             {'title': 'Freq', 'name': 'Freq', 'type': 'float', 'value': 600, 'default': 600, 'suffix':'Hz'},
-            {'title': 'Amp', 'name': 'Amp', 'type': 'float', 'value': 1, 'default': 1},
+            {'title': 'Amp', 'name': 'Amp', 'type': 'float', 'value': 0.05, 'default': 0.05},
             {'title': 'Phase', 'name': 'Phase', 'type': 'slide', 'value': 0, 'default': 0, 'suffix': 'pi rad', 'min':0, 'max':2},
-            {'title': 'Amp noise:', 'name': 'AmpNoise', 'type': 'float', 'value': 1, 'default': 1},
+            {'title': 'Amp noise:', 'name': 'AmpNoise', 'type': 'float', 'value': 20, 'default': 20},
             {'title': 'Phase noise', 'name': 'PhaseNoise', 'type': 'float', 'value': 0.12, 'default': 0.12},
         ]},
 
