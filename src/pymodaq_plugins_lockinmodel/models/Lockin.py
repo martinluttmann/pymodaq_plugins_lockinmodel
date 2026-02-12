@@ -22,6 +22,13 @@ class DataMixerLockin(DataMixerModel):
                {'title': 'Show traces', 'name': 'ShowTraces', 'type': 'bool', 'value': False,
                 'visible': True},
 
+               {'title': 'Envelope', 'name': 'Env', 'type': 'group', 'expanded': False, 'children': [
+                   {'title': 'Shape', 'name': 'EnvShape', 'type': 'list', 'limits': ['Sine', 'Linear'],
+                    'value': 'Sine'},
+                   {'title': 'Width', 'name': 'EnvWidth', 'type': 'slide', 'value': 5, 'suffix': '%',
+                    'visible': True, 'min': 0.01, 'max': 50},
+                   ]},
+
                {'title': 'Outputs', 'name': 'Outputs', 'type': 'group', 'expanded': False, 'children': [
                    {'title': 'X', 'name': 'X', 'type': 'bool', 'value': False,
                     'visible': True},
@@ -142,8 +149,37 @@ class DataMixerLockin(DataMixerModel):
 
     def sine_wave(self, data, freq, phase):
         axis = np.linspace(0, np.shape(data)[0] * 1 / (self.settings.child('SamplingRate').value()*1e6), np.shape(data)[0])
-        return np.sin(2*np.pi*axis*freq + phase)
+
+        wave = np.sin(2*np.pi*axis*freq + phase)
+
+        if self.settings.child('Env', 'EnvShape').value() == 'Sine':
+
+            width = int(self.settings.child('Env', 'EnvWidth').value()/100 * np.shape(data)[0])
+            wave[:width] = np.multiply(wave[:width], self.sine_envelope_start(data[:width]))
+
+            wave[-width:] = np.multiply(wave[-width:], self.sine_envelope_stop(data[-width:]))
+
+        return wave
 
     def square_wave(self, data, freq, phase):
         axis = np.linspace(0, np.shape(data)[0] * 1 / (self.settings.child('SamplingRate').value()*1e6), np.shape(data)[0])
-        return signal.square(t=2*np.pi*axis*freq + phase, duty=0.5)
+        wave = signal.square(t=2*np.pi*axis*freq + phase, duty=0.5)
+
+        if self.settings.child('Env', 'EnvShape').value() == 'Sine':
+
+            width = int(self.settings.child('Env', 'EnvWidth').value()/100 * np.shape(data)[0])
+            wave[:width] = np.multiply(wave[:width], self.sine_envelope_start(data[:width]))
+
+            wave[-width:] = np.multiply(wave[-width:], self.sine_envelope_stop(data[-width:]))
+
+        return wave
+
+    def sine_envelope_start(self, data):
+        length = np.shape(data)[0]
+        axis = np.linspace(0, length -1, length)
+        return np.sin(2*np.pi*axis/(4* length))
+
+    def sine_envelope_stop(self, data):
+        length = np.shape(data)[0]
+        axis = np.linspace(0, length -1, length)
+        return np.cos(2*np.pi*axis/(4* length))
