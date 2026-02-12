@@ -25,7 +25,7 @@ class DataMixerLockin(DataMixerModel):
                {'title': 'Envelope', 'name': 'Env', 'type': 'group', 'expanded': False, 'children': [
                    {'title': 'Shape', 'name': 'EnvShape', 'type': 'list', 'limits': ['Sine', 'Linear'],
                     'value': 'Sine'},
-                   {'title': 'Width', 'name': 'EnvWidth', 'type': 'slide', 'value': 5, 'suffix': '%',
+                   {'title': 'Width', 'name': 'EnvWidth', 'type': 'slide', 'value': 1, 'suffix': '%',
                     'visible': True, 'min': 0.01, 'max': 50},
                    ]},
 
