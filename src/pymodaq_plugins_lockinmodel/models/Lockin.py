@@ -23,18 +23,18 @@ class DataMixerLockin(DataMixerModel):
                 'visible': True},
 
                {'title': 'Envelope', 'name': 'Env', 'type': 'group', 'expanded': False, 'children': [
-                   {'title': 'Shape', 'name': 'EnvShape', 'type': 'list', 'limits': ['Sine', 'Linear'],
-                    'value': 'Sine'},
+                   {'title': 'Type', 'name': 'EnvShape', 'type': 'list', 'limits': ['Sine', 'Linear', 'None'],
+                    'value': 'None'},
                    {'title': 'Width', 'name': 'EnvWidth', 'type': 'slide', 'value': 1, 'suffix': '%',
                     'visible': True, 'min': 0.01, 'max': 50},
                    ]},
 
                {'title': 'Outputs', 'name': 'Outputs', 'type': 'group', 'expanded': False, 'children': [
-                   {'title': 'X', 'name': 'X', 'type': 'bool', 'value': False,
+                   {'title': 'X', 'name': 'X', 'type': 'bool', 'value': True,
                     'visible': True},
                    {'title': 'Y', 'name': 'Y', 'type': 'bool', 'value': False,
                     'visible': True},
-                   {'title': 'R', 'name': 'R', 'type': 'bool', 'value': True,
+                   {'title': 'R', 'name': 'R', 'type': 'bool', 'value': False,
                     'visible': True},
                    {'title': 'Theta', 'name': 'Theta', 'type': 'bool', 'value': False,
                     'visible': True},
@@ -159,6 +159,14 @@ class DataMixerLockin(DataMixerModel):
 
             wave[-width:] = np.multiply(wave[-width:], self.sine_envelope_stop(data[-width:]))
 
+        if self.settings.child('Env', 'EnvShape').value() == 'Linear':
+            print('here')
+
+            width = int(self.settings.child('Env', 'EnvWidth').value()/100 * np.shape(data)[0])
+            wave[:width] = np.multiply(wave[:width], self.linear_envelope_start(data[:width]))
+
+            wave[-width:] = np.multiply(wave[-width:], self.linear_envelope_stop(data[-width:]))
+
         return wave
 
     def square_wave(self, data, freq, phase):
@@ -172,6 +180,14 @@ class DataMixerLockin(DataMixerModel):
 
             wave[-width:] = np.multiply(wave[-width:], self.sine_envelope_stop(data[-width:]))
 
+        if self.settings.child('Env', 'EnvShape').value() == 'Linear':
+            print('here')
+
+            width = int(self.settings.child('Env', 'EnvWidth').value()/100 * np.shape(data)[0])
+            wave[:width] = np.multiply(wave[:width], self.linear_envelope_start(data[:width]))
+
+            wave[-width:] = np.multiply(wave[-width:], self.linear_envelope_stop(data[-width:]))
+
         return wave
 
     def sine_envelope_start(self, data):
@@ -183,3 +199,13 @@ class DataMixerLockin(DataMixerModel):
         length = np.shape(data)[0]
         axis = np.linspace(0, length -1, length)
         return np.cos(2*np.pi*axis/(4* length))
+
+    def linear_envelope_start(self, data):
+        length = np.shape(data)[0]
+        axis = np.linspace(0, length -1, length)
+        return axis/(length-1)
+
+    def linear_envelope_stop(self, data):
+        length = np.shape(data)[0]
+        axis = np.linspace(0, length -1, length)
+        return 1 - axis/(length-1)
